@@ -1,255 +1,602 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Keys tides — Sugarloaf / Marathon / Key West</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Florida Keys Tide Tables — Oct 19–25, 2026</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>
-:root{
-  --bg:#071018;--card:#0e1a24;--ink:#e8f1f6;--muted:#8aa4b3;--line:#1e3342;
-  --gold:#c9a227;--blue:#4aa3c7;--hi:#2a4a3a;--lo:#3a3a1a;--win:#d4c46a;
-}
-*{box-sizing:border-box}
-body{margin:0;font-family:system-ui,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--ink)}
-header{padding:14px 14px 8px;border-bottom:1px solid var(--line)}
-h1{margin:0 0 4px;font-size:1.15rem;letter-spacing:.02em}
-.sub{color:var(--muted);font-size:.8rem}
-.row{display:flex;flex-wrap:wrap;gap:6px;padding:8px 14px}
-button{
-  background:#132330;color:var(--ink);border:1px solid var(--line);
-  border-radius:8px;padding:8px 12px;font-size:.85rem;cursor:pointer
-}
-button.on{background:#1c4a5e;border-color:var(--blue)}
-button.gold{border-color:var(--gold);color:#f0e6b8}
-.area-h{margin:16px 14px 6px;font-size:.95rem;color:var(--gold);letter-spacing:.06em;text-transform:uppercase}
-.grid{display:grid;gap:10px;padding:0 14px 24px;grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
-.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px}
-.card h3{margin:0 0 8px;font-size:1rem}
-.meta{color:var(--muted);font-size:.75rem;margin-bottom:8px}
-.lows{display:flex;flex-wrap:wrap;gap:6px}
-.chip{background:#1a2c38;border-radius:8px;padding:8px;min-width:118px;font-size:.8rem}
-.chip .t{font-weight:650}
-.chip .w{color:var(--win);font-size:.72rem;margin-top:3px}
-.acts{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
-.acts button{font-size:.75rem;padding:6px 8px}
-.drill,.mapbox{margin-top:8px;font-size:.8rem;display:none}
-.drill.on,.mapbox.on{display:block}
-.tide-row{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px dashed #1e3342}
-.hi{color:#9ad4b0}.lo{color:#e6d98a}
-#allmap,#weather{display:none;margin:0 14px 16px}
-#allmap.on,#weather.on{display:block}
-iframe{width:100%;height:360px;border:0;border-radius:10px;background:#000}
-.wx-daily{display:flex;gap:8px;overflow:auto;padding-bottom:8px}
-.wxd{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px;min-width:110px;font-size:.78rem}
-table{width:100%;border-collapse:collapse;font-size:.75rem}
-th,td{border-bottom:1px solid var(--line);padding:4px 6px;text-align:left}
-.note{padding:0 14px 20px;color:var(--muted);font-size:.75rem}
+  :root { --ink:#071018; --silver:#a9c5d4; --water:#16324a; --gold:#e0a800; --card:#fff; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:"Segoe UI",system-ui,sans-serif; background:#0b1c28; color:var(--ink); }
+  header { max-width:1080px; margin:0 auto; padding:1.3rem 1rem .6rem; color:#e8f2f6; }
+  header h1 { margin:0 0 .3rem; font-size:1.4rem; }
+  header p { margin:.15rem 0; color:var(--silver); font-size:.92rem; }
+  main { max-width:1080px; margin:0 auto; padding:0 .8rem 2.4rem; }
+  .row { display:flex; flex-wrap:wrap; gap:.4rem; margin:.4rem 0; }
+  button { border:0; cursor:pointer; font:inherit; }
+  .mode-btn, .date-btn { background:#1e3d52; color:#dff0f6; padding:.5rem .85rem; border-radius:999px; font-size:.9rem; }
+  .mode-btn.active, .date-btn.active { background:#d7ecf4; color:#0b1c28; font-weight:750; }
+  .place-card { background:var(--card); border-radius:14px; padding:1rem; margin:.7rem 0; box-shadow:0 8px 22px rgba(0,0,0,.2); }
+  .place-head { display:flex; justify-content:space-between; align-items:flex-start; gap:.7rem; }
+  .place-head h2 { margin:0; font-size:1.12rem; color:var(--water); }
+  .place-head p { margin:.2rem 0 0; color:#4d6270; font-size:.85rem; }
+  .drill { background:#16324a; color:#fff; padding:.4rem .7rem; border-radius:8px; font-size:.82rem; white-space:nowrap; }
+  .drill.open { background:#e0a800; color:#2a1c00; font-weight:700; }
+  .lows { display:flex; flex-wrap:wrap; gap:.45rem; margin-top:.75rem; }
+  .low {
+    background:#fff8e0; border:1px solid #e0a800; border-radius:10px;
+    padding:.5rem .6rem; min-width:138px; flex:1 1 138px;
+  }
+  .low .d { font-size:.72rem; text-transform:uppercase; letter-spacing:.04em; color:#7a5a00; }
+  .low .t { font-size:1.05rem; font-weight:750; }
+  .low .h { color:#5a4a20; font-size:.85rem; }
+  .low .w { margin-top:.25rem; font-size:.78rem; font-weight:700; color:#5a3b00; }
+  .all-tides { display:none; margin-top:.75rem; border-top:1px solid #d7e2e8; padding-top:.7rem; }
+  .all-tides.show { display:block; }
+  .dayblock { margin:.45rem 0 .7rem; }
+  .dayblock h3 { margin:0 0 .35rem; font-size:.88rem; color:#16324a; }
+  .grid { display:flex; flex-wrap:wrap; gap:.35rem; }
+  .tide { border:1px solid #d7e2e8; border-radius:8px; padding:.4rem .5rem; min-width:110px; }
+  .tide.L { background:#fff8e0; border-color:#e0a800; }
+  .tide .k { font-size:.7rem; text-transform:uppercase; color:#5a6b75; }
+  .tide .tt { font-weight:750; }
+  footer { max-width:1080px; margin:0 auto; padding:0 1rem 2rem; color:#9bb3c0; font-size:.84rem; }
+  .date-bar { display:none; }
+  .date-bar.show { display:flex; }
+  .compare { display:flex; flex-wrap:wrap; gap:.7rem; }
+  .btns { display:flex; gap:.35rem; flex-wrap:wrap; justify-content:flex-end; }
+  .mapbtn { background:#2a6f8f; color:#fff; padding:.4rem .7rem; border-radius:8px; font-size:.82rem; }
+  .mapbtn.open { background:#7ad0e8; color:#0b1c28; font-weight:700; }
+  .mapbox { display:none; margin-top:.7rem; border-radius:10px; overflow:hidden; border:1px solid #c5d5de; }
+  .mapbox.show { display:block; }
+  .mapbox iframe { width:100%; height:260px; border:0; }
+  .mapcap { font-size:.8rem; color:#4d6270; padding:.4rem .55rem .55rem; background:#f3f7f9; }
+  .compare .place-card { flex:1 1 240px; margin:0; }
+  .region { margin: 1.1rem 0 .35rem; color:#d7ecf4; font-size:1.05rem; letter-spacing:.04em; text-transform:uppercase; font-weight:750; }
+  .region span { color:#a9c5d4; font-weight:500; text-transform:none; letter-spacing:0; font-size:.85rem; }
+  #wxWrap { display:none; background:#fff; border-radius:14px; padding:1rem; margin:.6rem 0 1rem; box-shadow:0 8px 22px rgba(0,0,0,.2); }
+  #wxWrap.show { display:block; }
+  .wx-meta { color:#4d6270; font-size:.85rem; margin:0 0 .6rem; }
+  .wx-days { display:flex; gap:.4rem; overflow-x:auto; padding-bottom:.3rem; }
+  .wx-day { min-width:92px; border:1px solid #d7e2e8; border-radius:10px; padding:.45rem .5rem; background:#f8fbfc; }
+  .wx-day b { display:block; font-size:.78rem; color:#16324a; }
+  .wx-hour-table { width:100%; border-collapse:collapse; font-size:.8rem; margin-top:.7rem; }
+  .wx-hour-table th { position:sticky; top:0; background:#eef5f8; text-align:left; padding:.3rem .35rem; }
+  .wx-hour-table td { border-bottom:1px solid #e6eef2; padding:.28rem .35rem; }
+  .wx-scroll { max-height:320px; overflow:auto; }
+
+  #allMapWrap { display:none; background:#fff; border-radius:14px; overflow:hidden; margin:.6rem 0 1rem; box-shadow:0 8px 22px rgba(0,0,0,.2); }
+  #allMapWrap.show { display:block; }
+  #windyWrap { display:none; background:#fff; border-radius:14px; overflow:hidden; margin:.6rem 0 1rem; box-shadow:0 8px 22px rgba(0,0,0,.2); }
+  #windyWrap.show { display:block; }
+  #windyWrap iframe { width:100%; height:460px; border:0; display:block; }
+  .windycap { padding:.5rem .75rem .65rem; font-size:.82rem; color:#4d6270; background:#f3f7f9; }
+  #allMap { height:400px; width:100%; }
+  .allmapcap { padding:.5rem .75rem .65rem; font-size:.82rem; color:#4d6270; background:#f3f7f9; }
 </style>
 </head>
 <body>
 <header>
-  <h1>Florida Keys tides & permit water</h1>
-  <div class="sub">Daytime lows (6am–6pm) · ±2 hr bite windows · not for navigation</div>
+  <h1>Florida Keys fishing tides</h1>
+  <p>Oct 19–25, 2026 · EDT · ft MLLW · lows shown only 6 AM–6 PM</p>
 </header>
-<div class="row" id="areas">
-  <button class="on" data-area="sugarloaf">Sugarloaf Area</button>
-  <button data-area="marathon">Marathon Area</button>
-  <button data-area="keywest">Key West Area</button>
-</div>
-<div class="row">
-  <button class="on" id="btnAll">SHOW ALL DATES</button>
-  <button id="btnDate">BY DATE</button>
-  <button class="gold" id="btnMap">MAP ALL SPOTS</button>
-  <button class="gold" id="btnWx">WEATHER</button>
-</div>
-<div class="row" id="dateRow" style="display:none"></div>
-<div class="row">
-  <button class="gold" id="btnWeek">THIS WEEK</button>
-  <button class="on" id="btnTrip">OCT 19–25</button>
-  <span class="sub" id="rangeLabel" style="align-self:center">Trip week Oct 19–25, 2026</span>
-</div>
-<div id="allmap">
-  <iframe id="allframe" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
-  <div class="sub">Tide stations and permit area marks. Needs internet.</div>
-</div>
-<div id="weather">
-  <div class="row" style="padding-left:0">
-    <button data-wx="sugarloaf" class="on">Sugarloaf</button>
-    <button data-wx="marathon">Marathon</button>
-    <button data-wx="keywest">Key West</button>
+<main>
+  <div class="row">
+    <button class="mode-btn active" id="areaSugarloaf" onclick="setArea('Sugarloaf')">Sugarloaf Area</button>
+    <button class="mode-btn" id="areaMarathon" onclick="setArea('Marathon')">Marathon Area</button>
+    <button class="mode-btn" id="areaKeyWest" onclick="setArea('Key West')">Key West Area</button>
   </div>
-  <div class="wx-daily" id="wxDaily"></div>
-  <div style="overflow:auto;max-height:320px;margin-top:8px">
-    <table id="wxHour"><thead><tr>
-      <th>Time</th><th>Sky</th><th>°F</th><th>Cloud</th><th>Precip%</th><th>Rain"</th><th>Wind</th><th>Dir</th><th>hPa</th><th>RH</th>
-    </tr></thead><tbody></tbody></table>
+  <div class="row">
+    <button class="mode-btn" id="btnAll" onclick="setMode('all')">SHOW ALL DATES</button>
+    <button class="mode-btn" id="btnDate" onclick="setMode('date')">BY DATE</button>
+    <button class="mode-btn" id="btnMapAll" onclick="toggleAllMap()">MAP ALL SPOTS</button>
+    <button class="mode-btn" id="btnWx" onclick="toggleWx()">WEATHER</button>
+    <button class="mode-btn" id="btnWindy" onclick="toggleWindy()">WINDY</button>
+    <button class="mode-btn" id="btnThisWeek" onclick="loadWeek('current')">THIS WEEK</button>
+    <button class="mode-btn" id="btnTripWeek" onclick="loadWeek('trip')">OCT 19–25</button>
   </div>
-  <div class="sub">Open-Meteo forecast. Cross-check NWS Key West in a storm.</div>
-</div>
-<div id="content"></div>
-<p class="note">Predictions only. NOAA 8724580 Key West, 8724326 Pirates Cove, 8723970 Vaca Key, 8724138 Bahia Honda. THIS WEEK uses NOAA API.</p>
+  <p id="weekLabel" style="color:#a9c5d4;font-size:.88rem;margin:.2rem 0 .4rem"></p>
+  <div id="wxWrap">
+    <div class="row" id="wxAreas"></div>
+    <p class="wx-meta" id="wxMeta">Loading forecast…</p>
+    <div id="wxDaily" class="wx-days"></div>
+    <div class="wx-scroll"><table class="wx-hour-table" id="wxHour"><thead></thead><tbody></tbody></table></div>
+  </div>
+  <div id="windyWrap">
+    <iframe id="windyFrame" title="Windy Keys" loading="lazy" data-src="https://embed.windy.com/embed2.html?lat=24.65&lon=-81.40&detailLat=24.65&detailLon=-81.40&zoom=8&level=surface&overlay=wind&product=ecmwf&menu=&message=&marker=true&calendar=now&pressure=&type=map&location=coordinates&detail=&metricWind=mph&metricTemp=%C2%B0F&radarRange=-1"></iframe>
+    <div class="windycap">Windy · Florida Keys · wind in mph, temp in °F. Tap the map layers inside Windy for gusts, rain, or waves. Not for navigation.</div>
+  </div>
+  <div id="allMapWrap">
+    <div id="allMap"></div>
+    <div class="allmapcap">Blue = tide stations. Gold = other popular permit water (area pins, not secret holes). Click a marker for the name.</div>
+  </div>
+  <div class="row date-bar" id="dateBar"></div>
+  <div id="view"></div>
+</main>
+<footer>
+  SHOW ALL and BY DATE list daytime lows only (6 AM–6 PM). Night lows still appear if you drill down.
+  Drill down on a place to see highs and lows. Predictions only; not for navigation.
+</footer>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-const spots = [
-  {id:'bow', area:'sugarloaf', name:'Sugarloaf — Bow Channel', lat:24.6933, lon:-81.5550, noaa:'8724326', offMin:-25, offFt:0.6, kind:'station'},
-  {id:'pirates', area:'sugarloaf', name:'Sugarloaf — Pirates Cove', lat:24.6533, lon:-81.5150, noaa:'8724326', offMin:0, offFt:0, kind:'station'},
-  {id:'creek', area:'sugarloaf', name:'Sugarloaf Creek / Saddlebunch', lat:24.627, lon:-81.575, noaa:'8724326', offMin:20, offFt:0.1, kind:'station'},
-  {id:'content', area:'sugarloaf', name:'Content Keys / Big Spanish', lat:24.78, lon:-81.48, noaa:'8724326', offMin:55, offFt:0.4, kind:'est'},
-  {id:'marathon', area:'marathon', name:'Marathon / Boot Key Harbor', lat:24.7117, lon:-81.1067, noaa:'8723970', offMin:0, offFt:0, kind:'station'},
-  {id:'bahia', area:'marathon', name:'Bahia Honda (west / bridge)', lat:24.655, lon:-81.274, noaa:'8724138', offMin:0, offFt:0, kind:'station'},
-  {id:'seven', area:'marathon', name:'Seven Mile / Pigeon Key', lat:24.704, lon:-81.155, noaa:'8723970', offMin:-15, offFt:0.15, kind:'station'},
-  {id:'keywest', area:'keywest', name:'Key West Naval Base / Harbor', lat:24.553, lon:-81.808, noaa:'8724580', offMin:0, offFt:0, kind:'station'}
+const dates = [
+  {key:"19", short:"Mon 19", long:"Monday, Oct 19"},
+  {key:"20", short:"Tue 20", long:"Tuesday, Oct 20"},
+  {key:"21", short:"Wed 21", long:"Wednesday, Oct 21"},
+  {key:"22", short:"Thu 22", long:"Thursday, Oct 22"},
+  {key:"23", short:"Fri 23", long:"Friday, Oct 23"},
+  {key:"24", short:"Sat 24", long:"Saturday, Oct 24"},
+  {key:"25", short:"Sun 25", long:"Sunday, Oct 25"}
 ];
-const extraPins = [
-  {name:'Big Spanish Key', lat:24.792, lon:-81.512},
-  {name:'Harbor Key / Jewfish', lat:24.74, lon:-81.49},
-  {name:'Thunderbolt wreck (area)', lat:24.75, lon:-80.99},
-  {name:'The Lakes', lat:24.555, lon:-81.87},
-  {name:'Archer Key', lat:24.51, lon:-81.96},
-  {name:'Barracuda Keys', lat:24.60, lon:-81.90},
-  {name:'Man / Woman / Boca Grande', lat:24.52, lon:-81.93},
-  {name:'Marquesas', lat:24.57, lon:-82.12},
-  {name:'Western Dry Rocks', lat:24.446, lon:-81.926}
+const places = [
+  {id:"bow", region:"Sugarloaf", name:"Sugarloaf — Bow Channel", note:"North end. Flats / channel. Larger range.",
+   days:{
+     "19":{tides:[["L","2:09 AM","0.97"],["H","7:46 AM","2.51"],["L","5:11 PM","0.57"],["H","10:28 PM","1.86"]],windows:["12:09–4:09 AM","3:11–7:11 PM"]},
+     "20":{tides:[["L","4:31 AM","0.96"],["H","9:03 AM","2.50"],["L","5:59 PM","0.59"],["H","10:55 PM","2.05"]],windows:["2:31–6:31 AM","3:59–7:59 PM"]},
+     "21":{tides:[["L","5:44 AM","0.87"],["H","10:16 AM","2.54"],["L","6:36 PM","0.61"],["H","11:21 PM","2.27"]],windows:["3:44–7:44 AM","4:36–8:36 PM"]},
+     "22":{tides:[["L","6:37 AM","0.74"],["H","11:19 AM","2.58"],["L","7:07 PM","0.62"],["H","11:49 PM","2.49"]],windows:["4:37–8:37 AM","5:07–9:07 PM"]},
+     "23":{tides:[["L","7:22 AM","0.57"],["H","12:14 PM","2.61"],["L","7:36 PM","0.63"]],windows:["5:22–9:22 AM","5:36–9:36 PM"]},
+     "24":{tides:[["H","12:18 AM","2.71"],["L","8:04 AM","0.38"],["H","1:05 PM","2.59"],["L","8:06 PM","0.63"]],windows:["6:04–10:04 AM","6:06–10:06 PM"]},
+     "25":{tides:[["H","~12:50 AM","~2.8"],["L","~8:45 AM","~0.3"],["H","~1:50 PM","~2.6"],["L","~8:35 PM","~0.6"]],windows:["~6:45–10:45 AM","~6:35–10:35 PM"]}
+   }},
+  {id:"pirates", region:"Sugarloaf", name:"Sugarloaf — Pirates Cove", note:"NOAA 8724326. Cove / camp. Smaller range.",
+   days:{
+     "19":{tides:[["H","3:29 AM","1.1"],["L","1:40 PM","0.5"],["H","5:55 PM","0.8"]],windows:["11:40 AM–3:40 PM"]},
+     "20":{tides:[["L","12:41 AM","0.9"],["H","4:48 AM","1.1"],["L","2:26 PM","0.5"],["H","6:31 PM","0.9"]],windows:["10:41 PM Mon–2:41 AM","12:26–4:26 PM"]},
+     "21":{tides:[["L","1:58 AM","0.8"],["H","5:59 AM","1.1"],["L","3:01 PM","0.5"],["H","6:59 PM","1.0"]],windows:["11:58 PM Tue–3:58 AM","1:01–5:01 PM"]},
+     "22":{tides:[["L","2:56 AM","0.7"],["H","6:58 AM","1.1"],["L","3:30 PM","0.5"],["H","7:26 PM","1.1"]],windows:["12:56–4:56 AM","1:30–5:30 PM"]},
+     "23":{tides:[["L","3:44 AM","0.5"],["H","7:52 AM","1.2"],["L","3:59 PM","0.6"],["H","7:53 PM","1.2"]],windows:["1:44–5:44 AM","1:59–5:59 PM"]},
+     "24":{tides:[["L","4:28 AM","0.4"],["H","8:40 AM","1.2"],["L","4:30 PM","0.6"],["H","8:25 PM","1.3"]],windows:["2:28–6:28 AM","2:30–6:30 PM"]},
+     "25":{tides:[["L","5:11 AM","0.2"],["H","9:29 AM","1.2"],["L","5:01 PM","0.6"],["H","8:58 PM","1.4"]],windows:["3:11–7:11 AM","3:01–7:01 PM"]}
+   }},
+  {id:"marathon", region:"Marathon", name:"Marathon / Boot Key", note:"Bridges and channels. Bay side is smaller.",
+   days:{
+     "19":{tides:[["H","3:04 AM","2.1"],["L","11:18 AM","0.8"],["H","5:35 PM","1.4"],["L","10:33 PM","1.3"]],windows:["9:18 AM–1:18 PM","8:33 PM–12:33 AM Tue"]},
+     "20":{tides:[["H","4:20 AM","2.1"],["L","12:05 PM","0.7"],["H","6:15 PM","1.6"],["L","11:45 PM","1.1"]],windows:["10:05 AM–2:05 PM","9:45 PM–1:45 AM Wed"]},
+     "21":{tides:[["H","5:35 AM","2.1"],["L","12:42 PM","~0.7"],["H","6:44 PM","1.8"]],windows:["10:42 AM–2:42 PM"]},
+     "22":{tides:[["L","~1:00 AM","~0.9"],["H","~6:40 AM","2.1"],["L","~1:50 PM","~0.7"],["H","~7:15 PM","1.9"]],windows:["~11:00 PM Wed–3:00 AM","~11:50 AM–3:50 PM"]},
+     "23":{tides:[["L","~2:00 AM","~0.6"],["H","~7:40 AM","2.1"],["L","~2:20 PM","~0.7"],["H","~7:50 PM","2.0"]],windows:["~12:00–4:00 AM","~12:20–4:20 PM"]},
+     "24":{tides:[["L","~2:45 AM","~0.4"],["H","~8:30 AM","2.1"],["L","~2:50 PM","~0.7"],["H","~8:20 PM","2.1"]],windows:["~12:45–4:45 AM","~12:50–4:50 PM"]},
+     "25":{tides:[["L","~3:30 AM","~0.2"],["H","~9:20 AM","2.0"],["L","~3:20 PM","~0.8"],["H","~8:50 PM","2.3"]],windows:["~1:30–5:30 AM","~1:20–5:20 PM"]}
+   }},
+  {id:"keywest", region:"Key West", name:"Key West Naval Base", note:"NOAA 8724580. Harbor / nearby staging.",
+   days:{
+     "19":{tides:[["H","4:09 AM","1.91"],["L","11:58 AM","0.70"],["H","6:37 PM","1.35"],["L","10:54 PM","1.15"]],windows:["9:58 AM–1:58 PM","8:54 PM–12:54 AM Tue"]},
+     "20":{tides:[["H","5:31 AM","1.88"],["L","12:46 PM","0.68"],["H","7:17 PM","1.48"]],windows:["10:46 AM–2:46 PM"]},
+     "21":{tides:[["L","12:16 AM","1.02"],["H","6:45 AM","1.9"],["L","1:22 PM","0.7"],["H","7:47 PM","1.6"]],windows:["10:16 PM Tue–2:16 AM","11:22 AM–3:22 PM"]},
+     "22":{tides:[["L","1:16 AM","0.8"],["H","7:46 AM","1.9"],["L","1:52 PM","0.7"],["H","8:15 PM","1.8"]],windows:["11:16 PM Wed–3:16 AM","11:52 AM–3:52 PM"]},
+     "23":{tides:[["L","2:05 AM","0.6"],["H","8:40 AM","1.9"],["L","2:20 PM","0.7"],["H","8:43 PM","2.0"]],windows:["12:05–4:05 AM","12:20–4:20 PM"]},
+     "24":{tides:[["L","2:49 AM","0.4"],["H","9:30 AM","1.9"],["L","2:49 PM","0.7"],["H","9:12 PM","2.2"]],windows:["12:49–4:49 AM","12:49–4:49 PM"]},
+     "25":{tides:[["L","3:33 AM","0.1"],["H","10:18 AM","1.9"],["L","3:19 PM","0.8"],["H","9:43 PM","2.4"]],windows:["1:33–5:33 AM","1:19–5:19 PM"]}
+   }},
+  {id:"creek", region:"Sugarloaf", name:"Sugarloaf Creek / Saddlebunch", note:"Closest creek mouths to Bow Channel. Times ~20 min after Bow.",
+   days:{
+     "19":{tides:[["L","2:29 AM","0.97"],["H","8:06 AM","2.51"],["L","5:31 PM","0.57"],["H","10:48 PM","1.86"]],windows:["12:29–4:29 AM","3:31–7:31 PM"]},
+     "20":{tides:[["L","4:51 AM","0.96"],["H","9:23 AM","2.50"],["L","6:19 PM","0.59"],["H","11:15 PM","2.05"]],windows:["2:51–6:51 AM","4:19–8:19 PM"]},
+     "21":{tides:[["L","6:04 AM","0.87"],["H","10:36 AM","2.54"],["L","6:56 PM","0.61"],["H","11:41 PM","2.27"]],windows:["4:04–8:04 AM","4:56–8:56 PM"]},
+     "22":{tides:[["L","6:57 AM","0.74"],["H","11:39 AM","2.58"],["L","7:27 PM","0.62"]],windows:["4:57–8:57 AM","5:27–9:27 PM"]},
+     "23":{tides:[["L","7:42 AM","0.57"],["H","12:34 PM","2.61"],["L","7:56 PM","0.63"]],windows:["5:42–9:42 AM","5:56–9:56 PM"]},
+     "24":{tides:[["H","12:38 AM","2.71"],["L","8:24 AM","0.38"],["H","1:25 PM","2.59"],["L","8:26 PM","0.63"]],windows:["6:24–10:24 AM","6:26–10:26 PM"]},
+     "25":{tides:[["H","~1:10 AM","~2.8"],["L","~9:05 AM","~0.3"],["H","~2:10 PM","~2.6"],["L","~8:55 PM","~0.6"]],windows:["~7:05–11:05 AM","~6:55–10:55 PM"]}
+   }},
+  {id:"content", region:"Sugarloaf", name:"Content Keys / Big Spanish", note:"Gulf backcountry. Larger range; lows run later than Hawk Channel. Area estimate from nearby gulf stations.",
+   days:{
+     "19":{tides:[["L","3:20 AM","1.4"],["H","10:20 AM","4.2"],["L","6:20 PM","0.9"],["H","11:50 PM","2.6"]],windows:["1:20–5:20 AM","4:20–8:20 PM"]},
+     "20":{tides:[["L","5:00 AM","1.3"],["H","11:30 AM","4.2"],["L","7:00 PM","0.9"]],windows:["3:00–7:00 AM","5:00–9:00 PM"]},
+     "21":{tides:[["L","6:20 AM","1.2"],["H","12:40 PM","4.3"],["L","7:30 PM","0.9"]],windows:["4:20–8:20 AM","5:30–9:30 PM"]},
+     "22":{tides:[["L","7:10 AM","1.0"],["H","1:40 PM","4.3"],["L","8:00 PM","0.9"]],windows:["5:10–9:10 AM","6:00–10:00 PM"]},
+     "23":{tides:[["L","8:00 AM","0.8"],["H","2:30 PM","4.4"],["L","8:30 PM","0.9"]],windows:["6:00–10:00 AM","6:30–10:30 PM"]},
+     "24":{tides:[["L","8:45 AM","0.5"],["H","3:20 PM","4.3"],["L","9:00 PM","1.0"]],windows:["6:45–10:45 AM","7:00–11:00 PM"]},
+     "25":{tides:[["L","~9:30 AM","~0.3"],["H","~4:00 PM","~4.2"],["L","~9:30 PM","~1.0"]],windows:["~7:30–11:30 AM","~7:30–11:30 PM"]}
+   }},
+  {id:"bahia", region:"Marathon", name:"Bahia Honda (west / bridge)", note:"Between Sugarloaf and Marathon. West Bahia Honda + bridge mix.",
+   days:{
+     "19":{tides:[["L","1:00 AM","1.18"],["H","8:08 AM","1.85"],["L","3:59 PM","0.70"],["H","10:36 PM","1.31"]],windows:["11:00 PM Sun–3:00 AM","1:59–5:59 PM"]},
+     "20":{tides:[["L","2:55 AM","1.15"],["H","9:30 AM","1.82"],["L","4:47 PM","0.68"],["H","11:16 PM","1.44"]],windows:["12:55–4:55 AM","2:47–6:47 PM"]},
+     "21":{tides:[["L","4:17 AM","1.02"],["H","10:44 AM","1.83"],["L","5:23 PM","0.67"],["H","11:46 PM","1.59"]],windows:["2:17–6:17 AM","3:23–7:23 PM"]},
+     "22":{tides:[["L","5:17 AM","0.83"],["H","11:45 AM","1.85"],["L","5:53 PM","0.68"]],windows:["3:17–7:17 AM","3:53–7:53 PM"]},
+     "23":{tides:[["H","12:14 AM","1.76"],["L","6:06 AM","0.60"],["H","12:39 PM","1.87"],["L","6:21 PM","0.69"]],windows:["4:06–8:06 AM","4:21–8:21 PM"]},
+     "24":{tides:[["H","12:42 AM","1.95"],["L","6:50 AM","0.36"],["H","1:29 PM","1.87"],["L","6:50 PM","0.72"]],windows:["4:50–8:50 AM","4:50–8:50 PM"]},
+     "25":{tides:[["H","1:11 AM","2.13"],["L","7:34 AM","0.14"],["H","2:17 PM","1.84"],["L","7:20 PM","0.76"]],windows:["5:34–9:34 AM","5:20–9:20 PM"]}
+   }},
+  {id:"seven", region:"Marathon", name:"Seven Mile / Pigeon Key", note:"Bridge corridor and Hawk Channel south of Pigeon Key. Marathon side.",
+   days:{
+     "19":{tides:[["H","3:21 AM","1.6"],["L","11:17 AM","0.4"],["H","5:50 PM","1.2"],["L","10:41 PM","0.6"]],windows:["9:17 AM–1:17 PM","8:41 PM–12:41 AM Tue"]},
+     "20":{tides:[["H","4:41 AM","1.6"],["L","12:07 PM","0.4"],["H","6:22 PM","1.3"]],windows:["10:07 AM–2:07 PM"]},
+     "21":{tides:[["H","5:52 AM","1.6"],["L","12:47 PM","0.4"],["H","6:50 PM","1.4"]],windows:["10:47 AM–2:47 PM"]},
+     "22":{tides:[["L","12:49 AM","0.5"],["H","6:51 AM","1.6"],["L","1:21 PM","0.4"],["H","7:18 PM","1.6"]],windows:["10:49 PM Mon–2:49 AM","11:21 AM–3:21 PM"]},
+     "23":{tides:[["L","1:37 AM","0.4"],["H","7:44 AM","1.7"],["L","1:52 PM","0.4"],["H","7:47 PM","1.7"]],windows:["11:37 PM Tue–3:37 AM","11:52 AM–3:52 PM"]},
+     "24":{tides:[["L","2:21 AM","0.2"],["H","8:33 AM","1.6"],["L","2:23 PM","0.4"],["H","8:18 PM","1.8"]],windows:["12:21–4:21 AM","12:23–4:23 PM"]},
+     "25":{tides:[["L","3:04 AM","0.1"],["H","9:22 AM","1.6"],["L","2:54 PM","0.4"],["H","8:51 PM","1.9"]],windows:["1:04–5:04 AM","12:54–4:54 PM"]}
+   }},
 ];
-const trip = {
-  pirates: {
-    '2026-10-19':[{t:'02:09',h:1.0,k:'L'},{t:'07:46',h:2.5,k:'H'},{t:'17:11',h:0.6,k:'L'},{t:'22:28',h:1.9,k:'H'}],
-    '2026-10-20':[{t:'04:31',h:1.0,k:'L'},{t:'09:03',h:2.5,k:'H'},{t:'17:59',h:0.6,k:'L'},{t:'22:55',h:2.1,k:'H'}],
-    '2026-10-21':[{t:'05:44',h:0.9,k:'L'},{t:'10:16',h:2.5,k:'H'},{t:'18:36',h:0.6,k:'L'},{t:'23:21',h:2.3,k:'H'}],
-    '2026-10-22':[{t:'06:37',h:0.8,k:'L'},{t:'11:19',h:2.6,k:'H'},{t:'19:07',h:0.6,k:'L'},{t:'23:49',h:2.5,k:'H'}],
-    '2026-10-23':[{t:'07:22',h:0.6,k:'L'},{t:'12:14',h:2.6,k:'H'},{t:'19:36',h:0.6,k:'L'}],
-    '2026-10-24':[{t:'00:18',h:2.7,k:'H'},{t:'08:04',h:0.4,k:'L'},{t:'13:05',h:2.6,k:'H'},{t:'20:06',h:0.6,k:'L'}],
-    '2026-10-25':[{t:'00:48',h:2.8,k:'H'},{t:'08:45',h:0.4,k:'L'},{t:'13:50',h:2.6,k:'H'},{t:'20:36',h:0.6,k:'L'}]
-  },
-  marathon: {
-    '2026-10-19':[{t:'03:04',h:2.1,k:'H'},{t:'11:18',h:0.8,k:'L'},{t:'17:35',h:1.4,k:'H'},{t:'22:33',h:1.3,k:'L'}],
-    '2026-10-20':[{t:'04:20',h:2.1,k:'H'},{t:'12:05',h:0.7,k:'L'},{t:'18:15',h:1.6,k:'H'},{t:'23:45',h:1.1,k:'L'}],
-    '2026-10-21':[{t:'05:35',h:2.1,k:'H'},{t:'12:42',h:0.7,k:'L'},{t:'18:44',h:1.8,k:'H'}],
-    '2026-10-22':[{t:'00:40',h:0.9,k:'L'},{t:'06:40',h:2.1,k:'H'},{t:'13:15',h:0.7,k:'L'},{t:'19:10',h:1.9,k:'H'}],
-    '2026-10-23':[{t:'01:30',h:0.8,k:'L'},{t:'07:30',h:2.1,k:'H'},{t:'13:45',h:0.6,k:'L'},{t:'19:40',h:2.0,k:'H'}],
-    '2026-10-24':[{t:'02:15',h:0.6,k:'L'},{t:'08:15',h:2.2,k:'H'},{t:'14:15',h:0.6,k:'L'},{t:'20:10',h:2.1,k:'H'}],
-    '2026-10-25':[{t:'02:55',h:0.5,k:'L'},{t:'09:00',h:2.2,k:'H'},{t:'14:45',h:0.6,k:'L'},{t:'20:40',h:2.2,k:'H'}]
-  },
-  keywest: {
-    '2026-10-19':[{t:'04:09',h:1.9,k:'H'},{t:'11:58',h:0.7,k:'L'},{t:'18:37',h:1.4,k:'H'},{t:'22:54',h:1.2,k:'L'}],
-    '2026-10-20':[{t:'05:31',h:1.9,k:'H'},{t:'12:46',h:0.7,k:'L'},{t:'19:17',h:1.5,k:'H'}],
-    '2026-10-21':[{t:'00:16',h:1.0,k:'L'},{t:'06:45',h:1.9,k:'H'},{t:'13:22',h:0.7,k:'L'},{t:'19:47',h:1.6,k:'H'}],
-    '2026-10-22':[{t:'01:16',h:0.8,k:'L'},{t:'07:46',h:1.9,k:'H'},{t:'13:52',h:0.7,k:'L'},{t:'20:15',h:1.8,k:'H'}],
-    '2026-10-23':[{t:'02:05',h:0.6,k:'L'},{t:'08:40',h:1.9,k:'H'},{t:'14:20',h:0.7,k:'L'},{t:'20:43',h:2.0,k:'H'}],
-    '2026-10-24':[{t:'02:49',h:0.4,k:'L'},{t:'09:30',h:1.9,k:'H'},{t:'14:49',h:0.7,k:'L'},{t:'21:12',h:2.2,k:'H'}],
-    '2026-10-25':[{t:'03:33',h:0.1,k:'L'},{t:'10:18',h:1.9,k:'H'},{t:'15:19',h:0.8,k:'L'},{t:'21:43',h:2.4,k:'H'}]
-  },
-  bahia: {
-    '2026-10-19':[{t:'03:40',h:2.0,k:'H'},{t:'11:40',h:0.7,k:'L'},{t:'18:00',h:1.5,k:'H'},{t:'22:50',h:1.2,k:'L'}],
-    '2026-10-20':[{t:'05:00',h:2.0,k:'H'},{t:'12:25',h:0.7,k:'L'},{t:'18:40',h:1.6,k:'H'},{t:'23:55',h:1.0,k:'L'}],
-    '2026-10-21':[{t:'06:10',h:2.0,k:'H'},{t:'13:00',h:0.7,k:'L'},{t:'19:10',h:1.8,k:'H'}],
-    '2026-10-22':[{t:'00:55',h:0.9,k:'L'},{t:'07:10',h:2.0,k:'H'},{t:'13:30',h:0.7,k:'L'},{t:'19:35',h:1.9,k:'H'}],
-    '2026-10-23':[{t:'01:45',h:0.7,k:'L'},{t:'08:00',h:2.0,k:'H'},{t:'14:00',h:0.6,k:'L'},{t:'20:05',h:2.0,k:'H'}],
-    '2026-10-24':[{t:'02:30',h:0.5,k:'L'},{t:'08:50',h:2.0,k:'H'},{t:'14:30',h:0.6,k:'L'},{t:'20:35',h:2.2,k:'H'}],
-    '2026-10-25':[{t:'03:15',h:0.3,k:'L'},{t:'09:35',h:2.0,k:'H'},{t:'15:00',h:0.7,k:'L'},{t:'21:05',h:2.3,k:'H'}]
-  }
+
+const maps = {
+  bow: {lat:24.6933, lon:-81.5550, label:"Sugarloaf Key, north end, Bow Channel"},
+  pirates: {lat:24.6533, lon:-81.5150, label:"Sugarloaf Key, Pirates Cove (NOAA 8724326)"},
+  marathon: {lat:24.7117, lon:-81.1067, label:"Marathon / Vaca Key — Boot Key Harbor area"},
+  keywest: {lat:24.553, lon:-81.808, label:"Key West Naval Base / Harbor (NOAA 8724580)"},
+  creek: {lat:24.648, lon:-81.535, label:"Sugarloaf Creek / Saddlebunch edges"},
+  content: {lat:24.82, lon:-81.48, label:"Content Keys / Big Spanish Key"},
+  bahia: {lat:24.657, lon:-81.277, label:"Bahia Honda Key (west / bridge)"},
+  seven: {lat:24.704, lon:-81.155, label:"Seven Mile Bridge / Pigeon Key"}
 };
-function applyOff(evts, min, ft){
-  return evts.map(e=>{
-    const [hh,mm]=e.t.split(':').map(Number);
-    let tot=hh*60+mm+min;
-    while(tot<0) tot+=1440;
-    while(tot>=1440) tot-=1440;
-    const H=String(Math.floor(tot/60)).padStart(2,'0');
-    const M=String(tot%60).padStart(2,'0');
-    return {t:H+':'+M, h:+(e.h+ft).toFixed(1), k:e.k};
+const permitPins = [
+  {lat:24.82, lon:-81.48, label:"Content Keys — backcountry permit flats"},
+  {lat:24.80, lon:-81.51, label:"Big Spanish Key"},
+  {lat:24.78, lon:-81.47, label:"Harbor Key / Jewfish Channel flats"},
+  {lat:24.657, lon:-81.277, label:"Bahia Honda oceanside flats"},
+  {lat:24.697, lon:-81.155, label:"Seven Mile Bridge current corridor"},
+  {lat:24.663, lon:-80.927, label:"Thunderbolt wreck (Marathon spawn wrecks)"},
+  {lat:24.57, lon:-81.87, label:"The Lakes / Lakes Passage"},
+  {lat:24.55, lon:-81.87, label:"Archer Key"},
+  {lat:24.60, lon:-81.87, label:"Barracuda Keys"},
+  {lat:24.535, lon:-81.97, label:"Man Key / Woman Key / Boca Grande chain"},
+  {lat:24.57, lon:-82.12, label:"Marquesas Keys — Mooney Harbor / atoll edges"},
+  {lat:24.445, lon:-81.925, label:"Western Dry Rocks"}
+];
+let mode = "all";
+let areaFilter = "Sugarloaf";
+let wxShown = false;
+let wxLoc = "Sugarloaf";
+let wxCache = {};
+
+let dateKey = "19";
+const open = {}; const mapOpen = {};
+
+function minutesOf(timeStr){
+  const m = String(timeStr).replace("~","").trim().match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+  if(!m) return null;
+  let h = parseInt(m[1],10);
+  const min = parseInt(m[2],10);
+  const ap = m[3].toUpperCase();
+  if(ap==="AM"){ if(h===12) h=0; }
+  else { if(h!==12) h+=12; }
+  return h*60+min;
+}
+function isDayLow(timeStr){
+  const mins = minutesOf(timeStr);
+  if(mins==null) return false;
+  return mins >= 6*60 && mins <= 18*60;
+}
+function lowsOf(day){
+  const lows = [];
+  let wi = 0;
+  day.tides.forEach(t => {
+    if(t[0]==="L"){
+      const win = day.windows[wi++] || "";
+      if(isDayLow(t[1])) lows.push({time:t[1], ht:t[2], win});
+    }
   });
+  return lows;
 }
-function tripFor(spot){
-  const map={};
-  const days=['2026-10-19','2026-10-20','2026-10-21','2026-10-22','2026-10-23','2026-10-24','2026-10-25'];
-  let src='pirates';
-  if(spot.id==='marathon'||spot.id==='seven') src='marathon';
-  if(spot.id==='keywest') src='keywest';
-  if(spot.id==='bahia') src='bahia';
-  days.forEach(d=>{ map[d]=applyOff(trip[src][d]||[], spot.offMin, spot.offFt); });
-  return map;
+
+function placeCard(p, dayKeys, showAllDays){
+  const isOpen = !!open[p.id];
+  let lowsHtml = "";
+  dayKeys.forEach(dk => {
+    const d = dates.find(x=>x.key===dk);
+    lowsOf(p.days[dk]).forEach(l => {
+      lowsHtml += `<div class="low"><div class="d">${d.short}</div><div class="t">${l.time}</div><div class="h">${l.ht} ft low</div><div class="w">${l.win}</div></div>`;
+    });
+  });
+  let detail = "";
+  if(showAllDays){
+    dates.forEach(d => {
+      const day = p.days[d.key];
+      detail += `<div class="dayblock"><h3>${d.long}</h3><div class="grid">` +
+        day.tides.map(t=>`<div class="tide ${t[0]}"><div class="k">${t[0]==="L"?"Low":"High"}</div><div class="tt">${t[1]}</div><div>${t[2]} ft</div></div>`).join("") +
+        `</div></div>`;
+    });
+  } else {
+    const d = dates.find(x=>x.key===dayKeys[0]);
+    const day = p.days[d.key];
+    detail = `<div class="dayblock"><h3>${d.long} — all tides</h3><div class="grid">` +
+      day.tides.map(t=>`<div class="tide ${t[0]}"><div class="k">${t[0]==="L"?"Low":"High"}</div><div class="tt">${t[1]}</div><div>${t[2]} ft</div></div>`).join("") +
+      `</div></div>`;
+  }
+  const isMap = !!mapOpen[p.id];
+  const m = maps[p.id];
+  const osm = `https://www.openstreetmap.org/export/embed.html?bbox=${m.lon-0.06}%2C${m.lat-0.04}%2C${m.lon+0.06}%2C${m.lat+0.04}&layer=mapnik&marker=${m.lat}%2C${m.lon}`;
+  const gmap = `https://www.google.com/maps?q=${m.lat},${m.lon}`;
+  return `<section class="place-card">
+    <div class="place-head">
+      <div><h2>${p.name}</h2><p>${p.note}</p></div>
+      <div class="btns">
+        <button class="mapbtn${isMap?" open":""}" onclick="toggleMap('${p.id}')">${isMap?"Hide map":"Map"}</button>
+        <button class="drill${isOpen?" open":""}" onclick="toggle('${p.id}')">${isOpen?"Hide tides":"Drill down — all tides"}</button>
+      </div>
+    </div>
+    <div class="mapbox${isMap?" show":""}">
+      <iframe src="${osm}" loading="lazy" title="Map of ${m.label}"></iframe>
+      <div class="mapcap">${m.label} · ${m.lat.toFixed(4)}, ${m.lon.toFixed(4)} · <a href="${gmap}" target="_blank" rel="noopener">Open in Google Maps</a></div>
+    </div>
+    <div class="lows">${lowsHtml}</div>
+    <div class="all-tides${isOpen?" show":""}">${detail}</div>
+  </section>`;
 }
-let mode='all', area='sugarloaf', dateKey='2026-10-19', weekMode='trip', liveData=null;
-const datesTrip=['2026-10-19','2026-10-20','2026-10-21','2026-10-22','2026-10-23','2026-10-24','2026-10-25'];
-let dates=datesTrip.slice();
-function fmtDay(iso){ return new Date(iso+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'}); }
-function to12(t){ let [h,m]=t.split(':').map(Number); const ap=h>=12?'pm':'am'; h=h%12; if(!h) h=12; return h+':'+String(m).padStart(2,'0')+' '+ap; }
-function mins(t){const [h,m]=t.split(':').map(Number);return h*60+m}
-function fromMins(n){ n=((n%1440)+1440)%1440; const h=Math.floor(n/60),m=n%60; return to12(String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')); }
-function isDayLow(e){ if(e.k!=='L') return false; const n=mins(e.t); return n>=360 && n<=1080; }
-function windowFor(t){ const n=mins(t); return fromMins(n-120)+' – '+fromMins(n+120); }
-function tidesFor(spot){ if(weekMode==='live' && liveData && liveData[spot.id]) return liveData[spot.id]; return tripFor(spot); }
-function renderDates(){
-  const row=document.getElementById('dateRow'); row.innerHTML='';
-  dates.forEach(d=>{ const b=document.createElement('button'); b.textContent=fmtDay(d).replace(',',''); if(d===dateKey) b.classList.add('on'); b.onclick=()=>{dateKey=d; render();}; row.appendChild(b); });
-}
-function osmEmbed(lat,lon){ const d=0.08; return 'https://www.openstreetmap.org/export/embed.html?bbox='+(lon-d)+'%2C'+(lat-d)+'%2C'+(lon+d)+'%2C'+(lat+d)+'&layer=mapnik&marker='+lat+'%2C'+lon; }
-function cardHTML(spot, dayFilter){
-  const data=tidesFor(spot);
-  const days=dayFilter?[dayFilter]:Object.keys(data).sort();
-  let lows='';
-  days.forEach(d=>{ (data[d]||[]).filter(isDayLow).forEach(e=>{ lows+='<div class="chip"><div class="t">'+fmtDay(d)+' · '+to12(e.t)+'</div><div>'+e.h+' ft low</div><div class="w">Fish '+windowFor(e.t)+'</div></div>'; }); });
-  if(!lows) lows='<div class="sub">No daytime low this selection.</div>';
-  let drill='';
-  days.forEach(d=>{ drill+='<div class="meta">'+fmtDay(d)+'</div>'; (data[d]||[]).forEach(e=>{ drill+='<div class="tide-row"><span class="'+(e.k==='H'?'hi':'lo')+'">'+(e.k==='H'?'High':'Low')+' '+to12(e.t)+'</span><span>'+e.h+' ft</span></div>'; }); });
-  const gmaps='https://www.google.com/maps?q='+spot.lat+','+spot.lon;
-  return '<div class="card" id="card-'+spot.id+'"><h3>'+spot.name+'</h3><div class="meta">'+spot.lat.toFixed(4)+', '+spot.lon.toFixed(4)+(spot.kind==='est'?' · gulf-side estimate':'')+'</div><div class="lows">'+lows+'</div><div class="acts"><button onclick="tog(\'d-'+spot.id+'\')">Drill down — all tides</button><button onclick="tog(\'m-'+spot.id+'\')">Map</button></div><div class="drill" id="d-'+spot.id+'">'+drill+'</div><div class="mapbox" id="m-'+spot.id+'"><iframe src="'+osmEmbed(spot.lat,spot.lon)+'"></iframe><div class="sub"><a href="'+gmaps+'" target="_blank" rel="noopener">Open in Google Maps</a></div></div></div>';
-}
+
 function render(){
-  document.getElementById('dateRow').style.display=mode==='date'?'flex':'none';
-  if(mode==='date') renderDates();
-  const groups={sugarloaf:'Sugarloaf',marathon:'Marathon',keywest:'Key West'};
-  let html='';
-  Object.keys(groups).forEach(a=>{ if(area!==a) return; html+='<div class="area-h">'+groups[a]+'</div><div class="grid">'; spots.filter(s=>s.area===a).forEach(s=>{ html+=cardHTML(s, mode==='date'?dateKey:null); }); html+='</div>'; });
-  document.getElementById('content').innerHTML=html;
-  const h=location.hash.replace('#','');
-  if(h){ const el=document.getElementById('card-'+h); if(el){ el.scrollIntoView({behavior:'smooth',block:'start'}); tog('d-'+h); } }
+  document.getElementById("btnAll").className = "mode-btn"+(mode==="all"?" active":"");
+  document.getElementById("btnDate").className = "mode-btn"+(mode==="date"?" active":"");
+  const bar = document.getElementById("dateBar");
+  bar.className = "row date-bar"+(mode==="date"?" show":"");
+  bar.innerHTML = dates.map(d=>`<button class="date-btn${d.key===dateKey?" active":""}" onclick="setDate('${d.key}')">${d.short}</button>`).join("");
+  const order = ["Sugarloaf","Marathon","Key West"];
+  const blurb = {
+    Sugarloaf: "Bow Channel, creeks, Content / Big Spanish backcountry",
+    Marathon: "Boot Key, Bahia Honda, Seven Mile / Pigeon Key",
+    "Key West": "Harbor and nearby staging"
+  };
+  ["Sugarloaf","Marathon","Key West"].forEach(a => {
+    const el = document.getElementById("area"+a.replace(" ",""));
+    if(el) el.className = "mode-btn"+(areaFilter===a?" active":"");
+  });
+  function grouped(dayKeys, showAllDays, compare){
+    return order.filter(reg => !areaFilter || reg===areaFilter).map(reg => {
+      const list = places.filter(p => p.region===reg);
+      if(!list.length) return "";
+      const cards = list.map(p => placeCard(p, dayKeys, showAllDays)).join("");
+      const wrap = compare ? `<div class="compare">${cards}</div>` : cards;
+      return `<h2 class="region">${reg} <span>${blurb[reg]}</span></h2>${wrap}`;
+    }).join("");
+  }
+  const view = document.getElementById("view");
+  if(mode==="all"){
+    view.innerHTML = grouped(dates.map(d=>d.key), true, false);
+  } else {
+    view.innerHTML = grouped([dateKey], false, true);
+  }
 }
-window.tog=function(id){ const el=document.getElementById(id); if(el) el.classList.toggle('on'); };
-document.getElementById('areas').onclick=e=>{ const b=e.target.closest('button[data-area]'); if(!b) return; area=b.dataset.area; [...document.getElementById('areas').children].forEach(x=>x.classList.toggle('on',x===b)); render(); };
-document.getElementById('btnAll').onclick=()=>{mode='all';syncMode();render();};
-document.getElementById('btnDate').onclick=()=>{mode='date';syncMode();render();};
-function syncMode(){ document.getElementById('btnAll').classList.toggle('on',mode==='all'); document.getElementById('btnDate').classList.toggle('on',mode==='date'); }
-document.getElementById('btnMap').onclick=()=>{ const box=document.getElementById('allmap'); box.classList.toggle('on'); if(box.classList.contains('on')){ const pts=spots.concat(extraPins); const minLat=Math.min(...pts.map(p=>p.lat))-0.15,maxLat=Math.max(...pts.map(p=>p.lat))+0.15; const minLon=Math.min(...pts.map(p=>p.lon))-0.15,maxLon=Math.max(...pts.map(p=>p.lon))+0.15; document.getElementById('allframe').src='https://www.openstreetmap.org/export/embed.html?bbox='+minLon+'%2C'+minLat+'%2C'+maxLon+'%2C'+maxLat+'&layer=mapnik&marker='+spots[0].lat+'%2C'+spots[0].lon; } };
-const wxLoc={sugarloaf:[24.65,-81.53],marathon:[24.71,-81.09],keywest:[24.55,-81.78]};
-let wxPlace='sugarloaf';
-document.getElementById('btnWx').onclick=()=>{ const box=document.getElementById('weather'); box.classList.toggle('on'); if(box.classList.contains('on')) loadWx(); };
-document.querySelectorAll('#weather [data-wx]').forEach(b=>{ b.onclick=()=>{ wxPlace=b.dataset.wx; document.querySelectorAll('#weather [data-wx]').forEach(x=>x.classList.toggle('on',x===b)); loadWx(); }; });
-function wmo(c){ if(c===0) return 'Clear'; if(c<=3) return 'Partly cloudy'; if(c<=48) return 'Fog/cloud'; if(c<=67) return 'Rain'; if(c<=82) return 'Showers'; if(c<=99) return 'Storms'; return '—'; }
-function compass(deg){ const d=['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW']; return d[Math.round(((deg%360)/22.5))%16]; }
-async function loadWx(){
-  const [lat,lon]=wxLoc[wxPlace];
-  const url='https://api.open-meteo.com/v1/forecast?latitude='+lat+'&longitude='+lon+'&hourly=temperature_2m,relative_humidity_2m,precipitation_probability,precipitation,cloud_cover,weather_code,pressure_msl,wind_speed_10m,wind_direction_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,wind_speed_10m_max,wind_direction_10m_dominant&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&timezone=America%2FNew_York&forecast_days=7';
-  try{
-    const j=await (await fetch(url)).json();
-    const d=j.daily;
-    document.getElementById('wxDaily').innerHTML=d.time.map((t,i)=>'<div class="wxd"><b>'+fmtDay(t)+'</b><div>'+wmo(d.weather_code[i])+'</div><div>'+Math.round(d.temperature_2m_max[i])+' / '+Math.round(d.temperature_2m_min[i])+'</div><div>Rain '+d.precipitation_probability_max[i]+'%</div><div>Wind '+Math.round(d.wind_speed_10m_max[i])+' '+compass(d.wind_direction_10m_dominant[i])+'</div></div>').join('');
-    const h=j.hourly; const now=Date.now(); let rows='';
-    for(let i=0;i<h.time.length;i++){ const ts=new Date(h.time[i]).getTime(); if(ts<now-3600000) continue; if(rows.split('<tr').length>49) break; const tm=new Date(h.time[i]); rows+='<tr><td>'+tm.toLocaleString('en-US',{weekday:'short',hour:'numeric',minute:'2-digit'})+'</td><td>'+wmo(h.weather_code[i])+'</td><td>'+Math.round(h.temperature_2m[i])+'</td><td>'+h.cloud_cover[i]+'%</td><td>'+h.precipitation_probability[i]+'</td><td>'+(h.precipitation[i]||0).toFixed(2)+'</td><td>'+Math.round(h.wind_speed_10m[i])+'</td><td>'+compass(h.wind_direction_10m[i])+'</td><td>'+Math.round(h.pressure_msl[i])+'</td><td>'+h.relative_humidity_2m[i]+'%</td></tr>'; }
-    document.querySelector('#wxHour tbody').innerHTML=rows;
-  }catch(err){ document.getElementById('wxDaily').innerHTML='Weather fetch failed.'; }
+function setMode(m){ mode=m; render(); }
+function setDate(k){ dateKey=k; render(); }
+
+function setArea(a){ areaFilter=a; render(); }
+
+const wxSites = {
+  Sugarloaf: {lat:24.65, lon:-81.53, label:"Sugarloaf Key"},
+  Marathon: {lat:24.71, lon:-81.09, label:"Marathon"},
+  "Key West": {lat:24.555, lon:-81.78, label:"Key West"}
+};
+function compass(deg){
+  const pts=["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"];
+  return pts[Math.round(((deg%360)+360)%360/22.5)%16];
 }
-async function loadWeek(){
-  document.getElementById('rangeLabel').textContent='Loading NOAA…';
-  const begin=new Date(); const days=[];
-  for(let i=0;i<7;i++){ const d=new Date(begin.getTime()+i*86400000); days.push(d.toISOString().slice(0,10)); }
-  dates=days; dateKey=days[0];
-  const stations=[...new Set(spots.map(s=>s.noaa))]; const raw={};
-  try{
-    await Promise.all(stations.map(async id=>{ const b=days[0].replace(/-/g,''); const e=days[6].replace(/-/g,''); const url='https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?product=predictions&application=keys-tides&begin_date='+b+'&end_date='+e+'&datum=MLLW&station='+id+'&time_zone=lst_ldt&units=english&interval=hilo&format=json'; const j=await (await fetch(url)).json(); raw[id]=j.predictions||[]; }));
-    liveData={};
-    spots.forEach(s=>{ const map={}; days.forEach(d=>map[d]=[]); (raw[s.noaa]||[]).forEach(p=>{ const day=p.t.slice(0,10); const hhmm=p.t.slice(11,16); const ev={t:hhmm,h:+(+p.v).toFixed(1),k:p.type==='H'?'H':'L'}; const adj=applyOff([ev], s.offMin, s.offFt)[0]; if(map[day]) map[day].push(adj); }); liveData[s.id]=map; });
-    weekMode='live';
-    document.getElementById('rangeLabel').textContent='This week (NOAA) '+fmtDay(days[0])+' – '+fmtDay(days[6]);
-    document.getElementById('btnWeek').classList.add('on');
-    document.getElementById('btnTrip').classList.remove('on');
+function wxCode(c){
+  if(c===0) return "Clear";
+  if(c<=3) return "Partly cloudy";
+  if(c<=48) return "Fog / haze";
+  if(c<=57) return "Drizzle";
+  if(c<=67) return "Rain";
+  if(c<=77) return "Wintry";
+  if(c<=82) return "Showers";
+  if(c<=99) return "Thunderstorms";
+  return "Mixed";
+}
+async function loadWx(name){
+  wxLoc = name;
+  document.getElementById("wxAreas").innerHTML = Object.keys(wxSites).map(k =>
+    `<button class="mode-btn${k===wxLoc?" active":""}" onclick="loadWx('${k}')">${k}</button>`
+  ).join("");
+  const meta = document.getElementById("wxMeta");
+  const site = wxSites[name];
+  meta.textContent = "Loading "+site.label+"…";
+  if(!wxCache[name]){
+    const url = "https://api.open-meteo.com/v1/forecast?latitude="+site.lat+"&longitude="+site.lon+
+      "&hourly=temperature_2m,relative_humidity_2m,cloud_cover,precipitation_probability,precipitation,pressure_msl,wind_speed_10m,wind_direction_10m,weather_code"+
+      "&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,wind_speed_10m_max,wind_direction_10m_dominant"+
+      "&timezone=America/New_York&wind_speed_unit=mph&temperature_unit=fahrenheit&precipitation_unit=inch&forecast_days=10";
+    try {
+      const res = await fetch(url);
+      wxCache[name] = await res.json();
+    } catch(e){
+      meta.textContent = "Could not load weather (needs internet).";
+      return;
+    }
+  }
+  const d = wxCache[name];
+  meta.textContent = site.label+" · Open-Meteo · "+(d.timezone||"EDT")+" · updated when you open this panel";
+  const daily = d.daily;
+  document.getElementById("wxDaily").innerHTML = daily.time.map((t,i) => {
+    const dt = new Date(t+"T12:00:00");
+    const lab = dt.toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"});
+    return `<div class="wx-day"><b>${lab}</b>${wxCode(daily.weather_code[i])}<br>${Math.round(daily.temperature_2m_max[i])}° / ${Math.round(daily.temperature_2m_min[i])}°<br>rain ${daily.precipitation_probability_max[i]}%<br>${Math.round(daily.wind_speed_10m_max[i])} mph ${compass(daily.wind_direction_10m_dominant[i])}</div>`;
+  }).join("");
+  const h = d.hourly;
+  const now = Date.now() - 60*60*1000;
+  let rows = "";
+  for(let i=0;i<h.time.length;i++){
+    const ts = new Date(h.time[i]).getTime();
+    if(ts < now) continue;
+    const dt = new Date(h.time[i]);
+    const lab = dt.toLocaleString("en-US",{weekday:"short",month:"short",day:"numeric",hour:"numeric"});
+    rows += `<tr><td>${lab}</td><td>${wxCode(h.weather_code[i])}</td><td>${Math.round(h.temperature_2m[i])}°</td><td>${h.cloud_cover[i]}%</td><td>${h.precipitation_probability[i]}%</td><td>${(h.precipitation[i]||0).toFixed(2)}"</td><td>${Math.round(h.wind_speed_10m[i])} ${compass(h.wind_direction_10m[i])}</td><td>${Math.round(h.pressure_msl[i])}</td><td>${h.relative_humidity_2m[i]}%</td></tr>`;
+  }
+  document.querySelector("#wxHour thead").innerHTML = "<tr><th>Time</th><th>Sky</th><th>Temp</th><th>Cloud</th><th>Precip%</th><th>Rain</th><th>Wind</th><th>hPa</th><th>RH</th></tr>";
+  document.querySelector("#wxHour tbody").innerHTML = rows;
+}
+let windyShown = false;
+function toggleWindy(){
+  windyShown = !windyShown;
+  document.getElementById("windyWrap").classList.toggle("show", windyShown);
+  document.getElementById("btnWindy").classList.toggle("active", windyShown);
+  const f = document.getElementById("windyFrame");
+  if(windyShown && f && !f.src) f.src = f.dataset.src;
+}
+function toggleWx(){
+  wxShown = !wxShown;
+  document.getElementById("wxWrap").classList.toggle("show", wxShown);
+  document.getElementById("btnWx").classList.toggle("active", wxShown);
+  if(wxShown) loadWx(areaFilter || "Sugarloaf");
+}
+
+function toggle(id){ open[id]=!open[id]; render(); }
+function toggleMap(id){ mapOpen[id]=!mapOpen[id]; render(); }
+
+let allMap = null;
+let allMapShown = false;
+function ensureAllMap(){
+  if(allMap) return;
+  allMap = L.map('allMap');
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 18,
+    attribution: '&copy; OpenStreetMap'
+  }).addTo(allMap);
+  const tideIcon = L.divIcon({className:'', html:'<div style="width:14px;height:14px;background:#2a6f8f;border:2px solid #fff;border-radius:50%;box-shadow:0 0 0 1px #16324a"></div>', iconSize:[14,14], iconAnchor:[7,7]});
+  const permIcon = L.divIcon({className:'', html:'<div style="width:14px;height:14px;background:#e0a800;border:2px solid #fff;border-radius:50%;box-shadow:0 0 0 1px #7a5a00"></div>', iconSize:[14,14], iconAnchor:[7,7]});
+  const pts = Object.values(maps).concat(permitPins);
+  const bounds = L.latLngBounds(pts.map(m => [m.lat, m.lon]));
+  Object.values(maps).forEach(m => {
+    L.marker([m.lat, m.lon], {icon:tideIcon}).addTo(allMap).bindPopup('<b>Tide station</b><br>'+m.label);
+  });
+  permitPins.forEach(m => {
+    L.marker([m.lat, m.lon], {icon:permIcon}).addTo(allMap).bindPopup('<b>Permit water</b><br>'+m.label);
+  });
+  allMap.fitBounds(bounds.pad(0.12));
+}
+function toggleAllMap(){
+  allMapShown = !allMapShown;
+  const wrap = document.getElementById('allMapWrap');
+  const btn = document.getElementById('btnMapAll');
+  wrap.classList.toggle('show', allMapShown);
+  btn.classList.toggle('active', allMapShown);
+  if(allMapShown){
+    ensureAllMap();
+    setTimeout(() => { allMap.invalidateSize(); }, 80);
+  }
+}
+
+
+const tripDates = dates.map(d => ({...d}));
+const tripDays = {};
+places.forEach(pl => { tripDays[pl.id] = JSON.parse(JSON.stringify(pl.days)); });
+let weekMode = "trip";
+
+const stationMap = {
+  keywest: {station:"8724580", min:0, h:1},
+  pirates: {station:"8724326", min:0, h:1},
+  bahia:   {station:"8724138", min:0, h:1},
+  marathon:{station:"8723970", min:0, h:1},
+  seven:   {station:"8723970", min:20, h:1.05},
+  bow:     {station:"8724326", min:-35, h:1.8},
+  creek:   {station:"8724326", min:-15, h:1.6},
+  content: {station:"8724580", min:240, h:1.7}
+};
+
+function fmt12(dt){
+  let h = dt.getHours(), m = dt.getMinutes();
+  const ap = h>=12 ? "PM":"AM";
+  h = h%12; if(!h) h=12;
+  return h+":"+String(m).padStart(2,"0")+" "+ap;
+}
+function shiftTime(iso, addMin){
+  const dt = new Date(iso.replace(" ","T"));
+  dt.setMinutes(dt.getMinutes()+addMin);
+  return dt;
+}
+function windowFor(timeStr){
+  const mins = minutesOf(timeStr);
+  if(mins==null) return "";
+  function clock(n){
+    n = ((n%1440)+1440)%1440;
+    let h = Math.floor(n/60), m = n%60;
+    const ap = h>=12?"PM":"AM";
+    h = h%12; if(!h) h=12;
+    return h+":"+String(m).padStart(2,"0")+" "+ap;
+  }
+  return clock(mins-120)+"–"+clock(mins+120);
+}
+function ymd(d){
+  return d.getFullYear()+String(d.getMonth()+1).padStart(2,"0")+String(d.getDate()).padStart(2,"0");
+}
+function weekStart(d){
+  const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  return x;
+}
+
+async function fetchStation(id, begin, end){
+  const url = "https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?product=predictions&application=NOS.COOPS.TAC.WL&begin_date="+begin+"&end_date="+end+"&datum=MLLW&station="+id+"&time_zone=lst_ldt&units=english&interval=hilo&format=json";
+  const res = await fetch(url);
+  const js = await res.json();
+  return js.predictions || [];
+}
+
+async function loadWeek(which){
+  weekMode = which;
+  document.getElementById("btnThisWeek").className = "mode-btn"+(which==="current"?" active":"");
+  document.getElementById("btnTripWeek").className = "mode-btn"+(which==="trip"?" active":"");
+  const lab = document.getElementById("weekLabel");
+  if(which==="trip"){
+    dates.splice(0, dates.length, ...tripDates.map(d=>({...d})));
+    places.forEach(pl => { pl.days = JSON.parse(JSON.stringify(tripDays[pl.id])); });
+    dateKey = dates[0].key;
+    lab.textContent = "Trip week · Oct 19–25, 2026 · stored predictions";
+    document.querySelector("header p").textContent = "Oct 19–25, 2026 · EDT · ft MLLW · lows shown only 6 AM–6 PM";
     render();
-  }catch(e){ document.getElementById('rangeLabel').textContent='NOAA failed — still on Oct 19–25'; weekMode='trip'; dates=datesTrip.slice(); }
+    return;
+  }
+  lab.textContent = "Loading NOAA tides for this week…";
+  try {
+    const start = weekStart(new Date());
+    const end = new Date(start); end.setDate(end.getDate()+6);
+    const begin = ymd(start), finish = ymd(end);
+    const needed = [...new Set(Object.values(stationMap).map(s=>s.station))];
+    const raw = {};
+    await Promise.all(needed.map(async id => { raw[id] = await fetchStation(id, begin, finish); }));
+    const newDates = [];
+    for(let i=0;i<7;i++){
+      const d = new Date(start); d.setDate(start.getDate()+i);
+      const key = String(d.getDate()).padStart(2,"0") + "-" + (d.getMonth()+1);
+      newDates.push({
+        key,
+        short: d.toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"}),
+        long: d.toLocaleDateString("en-US",{weekday:"long",month:"short",day:"numeric"}),
+        y: d.getFullYear(), mo: d.getMonth(), da: d.getDate()
+      });
+    }
+    places.forEach(pl => {
+      const cfg = stationMap[pl.id] || stationMap.keywest;
+      const pred = raw[cfg.station] || [];
+      pl.days = {};
+      newDates.forEach(nd => {
+        const tides = [];
+        const windows = [];
+        pred.forEach(row => {
+          const dt = shiftTime(row.t, cfg.min);
+          if(dt.getFullYear()!==nd.y || dt.getMonth()!==nd.mo || dt.getDate()!==nd.da) return;
+          const kind = row.type==="H" ? "H":"L";
+          const ht = (parseFloat(row.v)*cfg.h).toFixed(2);
+          const tm = fmt12(dt);
+          tides.push([kind, tm, ht]);
+          if(kind==="L") windows.push(windowFor(tm));
+        });
+        pl.days[nd.key] = {tides, windows};
+      });
+    });
+    dates.splice(0, dates.length, ...newDates);
+    dateKey = dates[0].key;
+    const a = start.toLocaleDateString("en-US",{month:"short",day:"numeric"});
+    const b = end.toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"});
+    lab.textContent = "This week · "+a+"–"+b+" · NOAA live (some spots use time/height offsets)";
+    document.querySelector("header p").textContent = a+"–"+b+" · EDT · ft MLLW · lows shown only 6 AM–6 PM";
+    render();
+  } catch(e){
+    lab.textContent = "Could not load NOAA this week (needs internet). Showing trip week.";
+    loadWeek("trip");
+  }
 }
-document.getElementById('btnWeek').onclick=loadWeek;
-document.getElementById('btnTrip').onclick=()=>{ weekMode='trip'; liveData=null; dates=datesTrip.slice(); dateKey='2026-10-19'; document.getElementById('rangeLabel').textContent='Trip week Oct 19–25, 2026'; document.getElementById('btnTrip').classList.add('on'); document.getElementById('btnWeek').classList.remove('on'); render(); };
-(function(){ const h=location.hash.replace('#',''); const s=spots.find(x=>x.id===h); if(s) area=s.area; [...document.getElementById('areas').children].forEach(x=>x.classList.toggle('on',x.dataset.area===area)); })();
-render();
+
+function applyHash(){
+  const id = (location.hash||"").replace("#","").trim();
+  const p = places.find(x => x.id===id);
+  if(!p) return;
+  areaFilter = p.region;
+  open[p.id] = true;
+}
+window.addEventListener("hashchange", () => { applyHash(); render(); });
+applyHash();
+loadWeek('trip');
 </script>
 </body>
 </html>
